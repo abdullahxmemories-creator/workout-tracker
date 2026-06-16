@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="description" content="Abdullah's personal workout logger with AI coaching, muscle recovery heatmap, and PR celebrations">
-<title>Abdullah — Workout Tracker</title>
+<title>Abdullah's Workout Tracker</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,27 +16,28 @@
    DESIGN TOKENS
    ============================================================ */
 :root {
-  --bg: #06080e;
-  --bg2: #0c0f18;
-  --glass: rgba(255,255,255,0.04);
-  --glass2: rgba(255,255,255,0.07);
-  --glass3: rgba(255,255,255,0.10);
-  --glass-border: rgba(255,255,255,0.08);
-  --glass-border2: rgba(255,255,255,0.12);
+  --bg: #030408;
+  --bg2: #0a0d14;
+  --glass: rgba(255,255,255,0.03);
+  --glass2: rgba(255,255,255,0.06);
+  --glass3: rgba(255,255,255,0.09);
+  --glass-border: rgba(255,255,255,0.06);
+  --glass-border2: rgba(255,255,255,0.1);
   --glass-blur: 40px;
-  --text: #f0f2f8;
-  --text2: #9ca3b8;
-  --text3: #5a6178;
-  --accent: #7c5cff;
-  --accent-glow: rgba(124,92,255,0.25);
-  --accent2: #2fd180;
-  --accent2-glow: rgba(47,209,128,0.2);
-  --danger: #ff5c5c;
-  --warn: #ffb454;
-  --warm-up: #fbbf24;
+  --text: #f8fafc;
+  --text2: #94a3b8;
+  --text3: #475569;
+  --accent: #8b5cf6;
+  --accent-glow: rgba(139,92,246,0.3);
+  --accent2: #10b981;
+  --accent2-glow: rgba(16,185,129,0.25);
+  --danger: #ef4444;
+  --warn: #f59e0b;
+  --warm-up: #eab308;
   --drop-set: #f97316;
   --failure: #ef4444;
   --giant-set: #a855f7;
+  --gold: #fbbf24;
   --radius: 20px;
   --radius-sm: 12px;
   --radius-xs: 8px;
@@ -54,7 +55,7 @@ body {
   font-family: var(--font);
   background: var(--bg);
   color: var(--text);
-  padding-bottom: 100px;
+  padding-bottom: 160px;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
   overflow-x: hidden;
@@ -66,9 +67,9 @@ body::before {
   position: fixed;
   top: -50%; left: -50%;
   width: 200%; height: 200%;
-  background: radial-gradient(ellipse at 20% 50%, rgba(124,92,255,0.08) 0%, transparent 50%),
-              radial-gradient(ellipse at 80% 20%, rgba(47,209,128,0.05) 0%, transparent 50%),
-              radial-gradient(ellipse at 50% 80%, rgba(255,92,92,0.04) 0%, transparent 50%);
+  background: radial-gradient(ellipse at 20% 50%, rgba(139,92,246,0.08) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, rgba(16,185,129,0.05) 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 80%, rgba(239,68,68,0.04) 0%, transparent 50%);
   animation: ambientDrift 20s ease-in-out infinite;
   z-index: 0;
   pointer-events: none;
@@ -176,10 +177,10 @@ nav button.active::before {
   content: '';
   position: absolute;
   top: -1px; left: 25%; right: 25%;
-  height: 2px;
+  height: 3px;
   background: var(--accent);
-  border-radius: 0 0 4px 4px;
-  box-shadow: 0 0 12px var(--accent-glow);
+  border-radius: 0 0 6px 6px;
+  box-shadow: 0 0 16px var(--accent-glow);
 }
 nav button svg { width: 22px; height: 22px; }
 nav button i { font-style: normal; font-size: 1.2rem; }
@@ -194,8 +195,75 @@ nav button i { font-style: normal; font-size: 1.2rem; }
 .page.active { display: block; }
 
 @keyframes pageIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.ai-chat-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 180px);
+  max-height: 800px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: relative;
+}
+.ai-chat-history-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ai-chat-input-area {
+  padding: 1rem;
+  background: rgba(6,8,14,0.8);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+.ai-chat-textarea {
+  flex: 1;
+  background: var(--glass2);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  resize: none;
+  max-height: 120px;
+  min-height: 44px;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color 0.3s;
+}
+.ai-chat-textarea:focus { border-color: var(--accent); }
+.ai-chat-msg {
+  padding: 10px 14px;
+  border-radius: 18px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  word-wrap: break-word;
+  max-width: 88%;
+}
+.ai-chat-user {
+  background: linear-gradient(135deg, var(--accent), #9b7cff);
+  color: #fff;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+.ai-chat-model {
+  background: var(--glass2);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
 }
 
 /* ============================================================
@@ -209,7 +277,7 @@ nav button i { font-style: normal; font-size: 1.2rem; }
   border-radius: var(--radius);
   padding: 1.1rem;
   margin-bottom: 0.85rem;
-  transition: transform 0.2s var(--spring), box-shadow 0.3s var(--smooth);
+  transition: transform 0.25s var(--spring), box-shadow 0.3s var(--smooth);
   position: relative;
   overflow: hidden;
 }
@@ -218,7 +286,7 @@ nav button i { font-style: normal; font-size: 1.2rem; }
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
 }
 .card:active { transform: scale(0.985); }
 .card h2 {
@@ -448,7 +516,7 @@ nav button i { font-style: normal; font-size: 1.2rem; }
 }
 
 .check-btn {
-  width: 34px; height: 34px;
+  width: 40px; height: 40px;
   border-radius: var(--radius-xs);
   border: 1px solid var(--glass-border);
   background: var(--glass2);
@@ -461,7 +529,7 @@ nav button i { font-style: normal; font-size: 1.2rem; }
 }
 .check-btn:active { transform: scale(0.85); }
 .check-btn.done {
-  background: rgba(47,209,128,0.15);
+  background: rgba(16,185,129,0.15);
   border-color: var(--accent2);
   color: var(--accent2);
   box-shadow: 0 0 12px var(--accent2-glow);
@@ -988,6 +1056,26 @@ textarea.notes {
   0%, 100% { opacity: 0.3; transform: scale(0.8); }
   50% { opacity: 1; transform: scale(1.2); }
 }
+.ai-chat-msg {
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+.ai-chat-user {
+  background: var(--accent);
+  color: #fff;
+  align-self: flex-end;
+  border-bottom-right-radius: 2px;
+}
+.ai-chat-model {
+  background: var(--glass2);
+  border: 1px solid var(--glass-border);
+  color: var(--text2);
+  align-self: flex-start;
+  border-bottom-left-radius: 2px;
+}
 
 /* ============================================================
    VOLUME CHART SECTION
@@ -1060,13 +1148,127 @@ textarea.notes {
   }
   body::before { animation: none; }
 }
+
+/* ============================================================
+   HISTORY DETAIL
+   ============================================================ */
+.history-item { cursor: pointer; }
+.history-detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s var(--smooth), padding 0.3s var(--smooth), opacity 0.3s;
+  opacity: 0;
+  padding: 0;
+}
+.history-detail.open {
+  max-height: 5000px;
+  opacity: 1;
+  padding: 0.8rem 0 0.2rem;
+}
+.history-ex-item { margin-bottom: 0.6rem; }
+.history-ex-name {
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.history-set-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.history-set-pill {
+  background: var(--glass2);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  color: var(--text2);
+  font-weight: 600;
+}
+.history-set-pill.warmup { color: var(--warm-up); border-color: rgba(251,191,36,0.3); }
+.history-set-pill.dropset { color: var(--drop-set); border-color: rgba(249,115,22,0.3); }
+.history-set-pill.failure { color: var(--failure); border-color: rgba(239,68,68,0.3); }
+.history-set-pill.giant { color: var(--giant-set); border-color: rgba(168,85,247,0.3); }
+.history-notes {
+  font-size: 0.72rem;
+  color: var(--text3);
+  font-style: italic;
+  margin-top: 2px;
+}
+.photo-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.workout-photo {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-xs);
+  object-fit: cover;
+  border: 1px solid var(--glass-border);
+  cursor: pointer;
+  transition: transform 0.2s var(--spring);
+}
+.workout-photo:active { transform: scale(0.95); }
+.photo-preview-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 400;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.photo-preview-overlay.open { display: flex; }
+.photo-preview-overlay img {
+  max-width: 95%;
+  max-height: 90vh;
+  border-radius: var(--radius);
+}
+.add-day-btn {
+  flex-shrink: 0;
+  background: var(--glass);
+  border: 1px dashed var(--glass-border2);
+  color: var(--text3);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s var(--spring);
+  font-family: var(--font);
+}
+.add-day-btn:active { transform: scale(0.94); }
+.history-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.history-photo-btn {
+  background: var(--glass2);
+  border: 1px solid var(--glass-border);
+  color: var(--text2);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all 0.2s var(--spring);
+}
+.history-photo-btn:active { transform: scale(0.94); }
+.page-bottom-spacer { height: 2rem; }
 </style>
 </head>
 <body>
 
 <header>
   <div>
-    <h1>Abdullah</h1>
+    <h1>Abdullah's</h1>
     <div class="sub">Workout & body tracker</div>
   </div>
 </header>
@@ -1161,26 +1363,42 @@ textarea.notes {
     </div>
   </div>
 
-  <!-- HISTORY PAGE -->
-  <div class="page" id="page-history">
-    <div class="stats-grid">
-      <div class="stat-box">
-        <div class="label">Total workouts</div>
-        <div class="value" id="stat-total-workouts">0</div>
+  <!-- AI COACH PAGE -->
+  <div class="page" id="page-ai">
+    <div class="ai-chat-container">
+      <div class="ai-chat-history-area" id="ai-chat-history">
+        <!-- Messages will render here -->
       </div>
-      <div class="stat-box">
-        <div class="label">This week</div>
-        <div class="value" id="stat-week-workouts">0</div>
+      <div class="ai-chat-input-area">
+        <textarea id="ai-chat-input" class="ai-chat-textarea" placeholder="Ask your AI Coach..." oninput="this.style.height='';this.style.height=this.scrollHeight+'px'" onkeypress="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); sendAIChatMessage(); }"></textarea>
+        <button class="btn" style="padding: 10px 14px;" onclick="sendAIChatMessage()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9L22 2"/></svg>
+        </button>
       </div>
     </div>
-    <div class="card">
-      <h2>Workout history</h2>
-      <div id="history-list"><div class="empty">No workouts logged yet</div></div>
+    <div style="display:flex; gap:8px; margin-top: 1rem;">
+      <button class="btn secondary" style="flex:1" onclick="clearAIChat()">🗑️ Clear Chat</button>
+      <button class="btn secondary" style="flex:1" onclick="copyAIPrompt()">📋 Copy Data Context</button>
     </div>
   </div>
 
   <!-- SETTINGS PAGE -->
   <div class="page" id="page-settings">
+    
+    <div class="card">
+      <h2>Workout history</h2>
+      <div class="stats-grid" style="margin-bottom:1rem;">
+        <div class="stat-box">
+          <div class="label">Total workouts</div>
+          <div class="value" id="stat-total-workouts">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">This week</div>
+          <div class="value" id="stat-week-workouts">0</div>
+        </div>
+      </div>
+      <div id="history-list"><div class="empty">No workouts logged yet</div></div>
+    </div>
     <!-- Rest Timer -->
     <div class="card">
       <h2>Rest timer</h2>
@@ -1209,19 +1427,13 @@ textarea.notes {
       <button class="btn secondary" style="margin-top:0.8rem;" onclick="openAddExerciseModal()">+ Add exercise</button>
     </div>
 
-    <!-- AI Coach -->
-    <div class="card ai-card">
-      <h2>🤖 AI Coach</h2>
-      <p class="muted" style="margin-bottom:0.8rem;">Get personalized workout advice powered by Google Gemini. Enter your API key below, or use "Copy Prompt" to paste into any AI chat.</p>
+    <div class="card">
+      <h2>Gemini AI Integration</h2>
+      <p class="muted" style="margin-bottom:0.8rem;">Enter your API key below to unlock the AI Coach. Your key is stored securely in your browser and never sent anywhere except directly to Google.</p>
       <div class="form-row">
-        <label>Gemini API Key (optional)</label>
+        <label>Gemini API Key</label>
         <input type="password" id="ai-api-key" placeholder="Paste your API key here" />
       </div>
-      <div style="display:flex;gap:8px;margin-top:0.5rem;">
-        <button class="btn" style="flex:1;" onclick="getAIReview()">✨ Get AI Review</button>
-        <button class="btn secondary" style="flex:1;" onclick="copyAIPrompt()">📋 Copy Prompt</button>
-      </div>
-      <div id="ai-response-area"></div>
     </div>
 
     <!-- Backup -->
@@ -1236,10 +1448,7 @@ textarea.notes {
       <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)" />
     </div>
 
-    <div class="card">
-      <h3 style="margin-bottom:0.5rem;">Install on iPhone</h3>
-      <p class="muted">In Safari: tap the Share icon → "Add to Home Screen". This gives you an app icon that opens full-screen, with your data saved locally.</p>
-    </div>
+    <div class="page-bottom-spacer"></div>
   </div>
 
 </div>
@@ -1251,8 +1460,8 @@ textarea.notes {
   <button data-page="progress" onclick="switchPage('progress')">
     <i>📈</i><span>Progress</span>
   </button>
-  <button data-page="history" onclick="switchPage('history')">
-    <i>📅</i><span>History</span>
+  <button data-page="ai" onclick="switchPage('ai')">
+    <i>🤖</i><span>AI Coach</span>
   </button>
   <button data-page="settings" onclick="switchPage('settings')">
     <i>⚙️</i><span>Settings</span>
@@ -1309,6 +1518,27 @@ textarea.notes {
   </div>
 </div>
 
+<!-- Add Day Modal -->
+<div class="modal-overlay" id="add-day-modal">
+  <div class="modal">
+    <h3>Add New Day</h3>
+    <div class="form-row">
+      <label>Day Focus (e.g. Arms + Abs)</label>
+      <input type="text" id="new-day-focus" placeholder="e.g. Arms + Abs" />
+    </div>
+    <button class="btn" onclick="addNewDay()">Add Day</button>
+    <div class="modal-close" onclick="closeModal('add-day-modal')">Cancel</div>
+  </div>
+</div>
+
+<!-- Photo Preview -->
+<div class="photo-preview-overlay" id="photo-preview" onclick="this.classList.remove('open')">
+  <img id="photo-preview-img" src="" alt="Workout photo" />
+</div>
+
+<!-- Hidden file input for photos -->
+<input type="file" id="photo-input" accept="image/*" style="display:none;" />
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1316,25 +1546,25 @@ textarea.notes {
    DATA MODEL
    ========================================================= */
 const DEFAULT_PLAN = {
-  "Day 1": { focus: "Chest, Shoulders, Triceps", exercises: [
+  "Day 1": { focus: "Chest, Shoulders, Biceps", exercises: [
     "Bench press","Cable fly","Shoulder press (dumbbell/smith)","Cable lateral raise",
-    "Rear delt fly","Triceps bar pushdown","Dips","Ab: Hanging leg raise"
+    "Rear delt fly","Preacher curl","Barbell curl","Ab: Hanging leg raise"
   ]},
-  "Day 2": { focus: "Back, Biceps", exercises: [
-    "Deadlift","Lats pulldown wide grip","1 arm cable rowing","Preacher curl",
-    "Barbell curl","Reverse barbell curl","Ab: Crunches + twist"
+  "Day 2": { focus: "Back, Triceps", exercises: [
+    "Deadlift","Lats pulldown wide grip","1 arm cable rowing","Triceps bar pushdown",
+    "Dips","Reverse barbell curl","Ab: Crunches + twist"
   ]},
   "Day 3": { focus: "Legs", exercises: [
     "Squats","Leg press","Leg extension","Lying leg curl","Romanian deadlift (RDL)",
     "Calf raise (sitting)","Calf raise (standing)","Wrist extensions","Ab: Crunches"
   ]},
-  "Day 4": { focus: "Chest, Shoulders, Triceps", exercises: [
+  "Day 4": { focus: "Chest, Shoulders, Biceps", exercises: [
     "Incline dumbbell press","Chest cable fly","Face pull","Shoulder press",
-    "Cable lateral raise","Triceps rope pushdown","Rope cable extension","Ab: Hanging leg raise"
+    "Cable lateral raise","Hammer curl","Barbell curl","Ab: Hanging leg raise"
   ]},
-  "Day 5": { focus: "Back, Biceps", exercises: [
+  "Day 5": { focus: "Back, Triceps", exercises: [
     "Lats pullover (cable)","Lats pulldown close grip","Cable rowing (wide grip barbell)",
-    "Good mornings / back extensions","Hammer curl","Barbell curl","Ab: Lying leg raise"
+    "Good mornings / back extensions","Triceps rope pushdown","Rope cable extension","Ab: Lying leg raise"
   ]},
   "Day 6": { focus: "Legs + Abs + Arms", exercises: [
     "Squats","Leg extension","Calf raise","Reverse barbell curl","Biceps curl",
@@ -1369,6 +1599,7 @@ const SET_TYPES = [
 ];
 
 const STORAGE_KEY = 'abdullah-tracker-state-v1';
+const GEMINI_API_KEY = 'AQ.Ab8RN6KRhicWYseyVWlo82AAklXyV4RmJyBYw_wDp1fG8n1dSA';
 
 let state = {
   currentDay: "Day 1",
@@ -1490,7 +1721,7 @@ function renderDayTabs() {
   });
 }
 
-function renderExercises() {
+function renderExercises(skipAnimation) {
   const wrap = document.getElementById('exercise-list');
   wrap.innerHTML = '';
   const dayData = state.plan[state.currentDay];
@@ -1520,7 +1751,11 @@ function renderExercises() {
     const data = state.exerciseData[exName];
     const card = document.createElement('div');
     card.className = 'exercise';
-    card.style.animationDelay = (exIdx * 0.05) + 's';
+    if (skipAnimation) {
+      card.style.animation = 'none';
+    } else {
+      card.style.animationDelay = (exIdx * 0.05) + 's';
+    }
 
     const head = document.createElement('div');
     head.className = 'ex-head';
@@ -1569,7 +1804,11 @@ function renderExercises() {
       if (isDropChild) {
         row.classList.add('dropset-child');
       }
-      row.style.animationDelay = (idx * 0.04) + 's';
+      if (skipAnimation) {
+        row.style.animation = 'none';
+      } else {
+        row.style.animationDelay = (idx * 0.04) + 's';
+      }
 
       // Set number
       const setNumLabel = isDropChild ? '↓' : (idx + 1);
@@ -1598,6 +1837,7 @@ function renderExercises() {
       
       const checkBtn = row.querySelector('.check-btn');
       checkBtn.onclick = () => {
+        if (navigator.vibrate) navigator.vibrate(50);
         set.done = !set.done;
         checkBtn.classList.toggle('done');
         const meta = head.querySelector('.ex-meta');
@@ -1605,8 +1845,15 @@ function renderExercises() {
         meta.textContent = `${cnt}/${data.sets.length} sets ${pr ? '· PR: '+pr.weight+'kg × '+pr.reps : ''}`;
         saveState();
         if (set.done) {
+          if (pr && Number(set.weight) > Number(pr.weight)) {
+            weightInput.style.color = 'var(--gold)';
+            weightInput.style.fontWeight = '700';
+          }
           showToast('Set logged — rest timer started');
           startRestTimer();
+        } else {
+          weightInput.style.color = '';
+          weightInput.style.fontWeight = '';
         }
       };
       body.appendChild(row);
@@ -1622,7 +1869,9 @@ function renderExercises() {
     addSetBtn.onclick = () => {
       data.sets.push({weight:'', reps:'', done:false, type:'normal'});
       saveState();
-      renderExercises();
+      const scrollY = window.scrollY;
+      renderExercises(true);
+      requestAnimationFrame(() => window.scrollTo(0, scrollY));
     };
     
     const addDropBtn = document.createElement('button');
@@ -1633,7 +1882,9 @@ function renderExercises() {
     addDropBtn.onclick = () => {
       data.sets.push({weight:'', reps:'', done:false, type:'dropset'});
       saveState();
-      renderExercises();
+      const scrollY = window.scrollY;
+      renderExercises(true);
+      requestAnimationFrame(() => window.scrollTo(0, scrollY));
     };
     
     const removeSetBtn = document.createElement('button');
@@ -1643,7 +1894,9 @@ function renderExercises() {
       if (data.sets.length > 1) {
         data.sets.pop();
         saveState();
-        renderExercises();
+        const scrollY = window.scrollY;
+        renderExercises(true);
+        requestAnimationFrame(() => window.scrollTo(0, scrollY));
       }
     };
     
@@ -1752,12 +2005,21 @@ function finishWorkout() {
     return;
   }
 
+  // Collect exercise notes for history
+  const exerciseNotes = {};
+  dayData.exercises.forEach(exName => {
+    const data = state.exerciseData[exName];
+    if (data.notes) exerciseNotes[exName] = data.notes;
+  });
+
   state.workoutHistory.unshift({
     date: new Date().toISOString(),
     day: state.currentDay,
     focus: dayData.focus,
     totalVolume,
-    exercises: exercisesLog
+    exercises: exercisesLog,
+    exerciseNotes: exerciseNotes,
+    photos: []
   });
 
   // Reset done flags
@@ -2365,19 +2627,109 @@ function renderHistory() {
     wrap.innerHTML = '<div class="empty">No workouts logged yet</div>';
     return;
   }
-  wrap.innerHTML = state.workoutHistory.slice(0,30).map(w => {
+
+  wrap.innerHTML = '';
+  state.workoutHistory.slice(0, 50).forEach((w, wIdx) => {
     const d = new Date(w.date);
-    const dateStr = d.toLocaleDateString('en-US',{month:'short', day:'numeric', year:'numeric'});
-    return `
-      <div class="history-item">
-        <div>
-          <div class="day">${w.day} — ${w.focus}</div>
-          <div class="date">${dateStr}</div>
-        </div>
-        <div class="vol">${Math.round(w.totalVolume).toLocaleString()} kg vol</div>
+    const dateStr = d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+    const timeStr = d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+
+    const item = document.createElement('div');
+    item.style.borderBottom = '1px solid var(--glass-border)';
+
+    const header = document.createElement('div');
+    header.className = 'history-item';
+    header.innerHTML = `
+      <div>
+        <div class="day">${w.day} — ${w.focus}</div>
+        <div class="date">${dateStr} at ${timeStr}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="vol">${Math.round(w.totalVolume).toLocaleString()} kg</div>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
       </div>
     `;
-  }).join('');
+
+    const detail = document.createElement('div');
+    detail.className = 'history-detail';
+
+    let detailHTML = '';
+    if (w.exercises) {
+      Object.entries(w.exercises).forEach(([exName, sets]) => {
+        if (sets.length === 0) return;
+        const exVol = sets.reduce((a, s) => a + (Number(s.weight) * Number(s.reps)), 0);
+        detailHTML += '<div class="history-ex-item">';
+        detailHTML += `<div class="history-ex-name">${exName} <span style="color:var(--text3);font-weight:500;font-size:0.72rem;">${Math.round(exVol)} kg vol</span></div>`;
+        detailHTML += '<div class="history-set-list">';
+        sets.forEach((s, i) => {
+          const typeClass = (s.type && s.type !== 'normal') ? s.type : '';
+          detailHTML += `<div class="history-set-pill ${typeClass}">${s.weight}kg × ${s.reps}${typeClass ? ' (' + typeClass + ')' : ''}</div>`;
+        });
+        detailHTML += '</div>';
+        if (w.exerciseNotes && w.exerciseNotes[exName]) {
+          detailHTML += `<div class="history-notes">📝 ${w.exerciseNotes[exName]}</div>`;
+        }
+        detailHTML += '</div>';
+      });
+    }
+
+    // Photos
+    if (w.photos && w.photos.length > 0) {
+      detailHTML += '<div class="photo-grid">';
+      w.photos.forEach((photo, pIdx) => {
+        detailHTML += `<img class="workout-photo" src="${photo}" alt="Workout photo" data-widx="${wIdx}" data-pidx="${pIdx}" />`;
+      });
+      detailHTML += '</div>';
+    }
+
+    detailHTML += '<div class="history-actions">';
+    detailHTML += `<button class="history-photo-btn" data-widx="${wIdx}">📷 Add Photo</button>`;
+    detailHTML += `<button class="history-photo-btn" style="color:var(--danger);" data-del="${wIdx}">🗑️ Delete</button>`;
+    detailHTML += '</div>';
+
+    detail.innerHTML = detailHTML;
+
+    // Photo click handlers
+    detail.querySelectorAll('.workout-photo').forEach(img => {
+      img.onclick = (e) => {
+        e.stopPropagation();
+        document.getElementById('photo-preview-img').src = img.src;
+        document.getElementById('photo-preview').classList.add('open');
+      };
+    });
+
+    // Add photo button
+    const photoBtn = detail.querySelector('button[data-widx]');
+    if (photoBtn) {
+      photoBtn.onclick = (e) => {
+        e.stopPropagation();
+        addPhotoToWorkout(parseInt(photoBtn.dataset.widx));
+      };
+    }
+
+    // Delete button
+    const delBtn = detail.querySelector('[data-del]');
+    if (delBtn) {
+      delBtn.onclick = (e) => {
+        e.stopPropagation();
+        deleteWorkout(parseInt(delBtn.dataset.del));
+      };
+    }
+
+    header.onclick = () => {
+      const isOpen = detail.classList.contains('open');
+      wrap.querySelectorAll('.history-detail').forEach(d => d.classList.remove('open'));
+      wrap.querySelectorAll('.chev').forEach(c => c.classList.remove('open'));
+      if (!isOpen) {
+        detail.classList.add('open');
+        header.querySelector('.chev').classList.add('open');
+      }
+    };
+
+    item.appendChild(header);
+    item.appendChild(detail);
+    wrap.appendChild(item);
+  });
 }
 
 /* =========================================================
@@ -2391,7 +2743,9 @@ function renderSettings() {
   
   // Restore AI key
   const keyInput = document.getElementById('ai-api-key');
-  if (keyInput && state.aiApiKey) keyInput.value = state.aiApiKey;
+  if (keyInput) keyInput.value = state.aiApiKey || GEMINI_API_KEY;
+
+  renderAIChat();
 }
 
 function renderManageDayTabs() {
@@ -2404,6 +2758,17 @@ function renderManageDayTabs() {
     btn.onclick = () => { manageDay = day; renderManageDayTabs(); renderManageExercises(); };
     wrap.appendChild(btn);
   });
+
+  // Add Day button
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-day-btn';
+  addBtn.textContent = '+ Day';
+  addBtn.onclick = () => {
+    document.getElementById('new-day-focus').value = '';
+    document.getElementById('add-day-modal').classList.add('open');
+  };
+  wrap.appendChild(addBtn);
+
   document.getElementById('manage-day-name').textContent = manageDay;
 }
 
@@ -2556,8 +2921,9 @@ function toggleTimer() {
   updateTimerDisplay();
 }
 
-function adjustTimer(delta) {
-  timerSeconds = Math.max(0, timerSeconds + delta);
+function adjustTimer(val) {
+  if (navigator.vibrate) navigator.vibrate(20);
+  timerSeconds = Math.max(15, timerSeconds + val);
   updateTimerDisplay();
 }
 
@@ -2643,15 +3009,13 @@ function saveLog() {
 }
 
 /* =========================================================
-   AI COACH
+   AI COACH CHAT
    ========================================================= */
-function buildAIPrompt() {
-  const recentWorkouts = state.workoutHistory.slice(0, 10);
-  const prs = Object.entries(state.personalRecords);
+function buildAIContext() {
+  const recentWorkouts = state.workoutHistory.slice(0, 7); // Use only last 7 to save context window tokens and increase speed
   const plan = state.plan;
   
-  let prompt = `You are an expert personal fitness coach. Analyze my workout data and provide detailed, actionable advice.
-
+  let ctx = `You are an expert personal fitness coach. Analyze my workout data and provide actionable advice.
 ## My Workout Plan
 ${Object.entries(plan).map(([day, d]) => `**${day}** (${d.focus}): ${d.exercises.join(', ')}`).join('\n')}
 
@@ -2661,59 +3025,99 @@ ${recentWorkouts.map(w => {
     const exercises = Object.entries(w.exercises).map(([name, sets]) => {
       return `  - ${name}: ${sets.map(s => `${s.weight}kg×${s.reps}${s.type && s.type !== 'normal' ? ' ('+s.type+')' : ''}`).join(', ')}`;
     }).join('\n');
-    return `**${d} — ${w.day} (${w.focus})** | Volume: ${Math.round(w.totalVolume)}kg\n${exercises}`;
-  }).join('\n\n')}
+    return `* ${d} - ${w.day} (${w.focus}) - Vol: ${w.totalVolume}kg\n${exercises}`;
+}).join('\n\n')}
 
-## Personal Records
-${prs.length > 0 ? prs.map(([name,pr]) => `- ${name}: ${pr.weight}kg × ${pr.reps} (${new Date(pr.date).toLocaleDateString()})`).join('\n') : 'No PRs yet'}
-
-## Body Weight Trend
-${state.bodyWeight.length > 0 ? state.bodyWeight.slice(-5).map(w => `${new Date(w.date).toLocaleDateString()}: ${w.value}kg`).join(', ') : 'No data'}
-
-Please provide:
-1. **Overall Assessment** — How balanced and effective is my training?
-2. **Progress Analysis** — Am I progressing well? Any plateaus?
-3. **Specific Recommendations** — What should I change or add?
-4. **Recovery Notes** — Am I allowing enough recovery between muscle groups?
-5. **Next Week Focus** — What should I prioritize in my next training week?
-
-Keep your response structured, concise, and motivating.`;
-  
-  return prompt;
+Keep your responses structured, concise, and motivating. Use a friendly, conversational tone.`;
+  return ctx;
 }
 
-async function getAIReview() {
-  const keyInput = document.getElementById('ai-api-key');
-  const apiKey = keyInput.value.trim();
+function renderAIChat() {
+  const container = document.getElementById('ai-chat-history');
+  if (!container) return;
   
-  if (apiKey) {
+  if (!state.aiChatHistory || state.aiChatHistory.length === 0) {
+    container.innerHTML = '<div class="muted" style="text-align:center;padding:1rem;">Say hello to your AI coach!</div>';
+    return;
+  }
+  
+  container.innerHTML = state.aiChatHistory.map(msg => `
+    <div class="ai-chat-msg ai-chat-${msg.role}">
+      ${msg.role === 'model' ? formatAIResponse(msg.text) : escapeHTML(msg.text)}
+    </div>
+  `).join('');
+  
+  container.scrollTop = container.scrollHeight;
+}
+
+function escapeHTML(str) {
+  return str.replace(/[&<>'"]/g, 
+    tag => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+    }[tag] || tag)
+  );
+}
+
+function clearAIChat() {
+  state.aiChatHistory = [];
+  saveState();
+  renderAIChat();
+}
+
+function triggerAIAnalysis() {
+  const input = document.getElementById('ai-chat-input');
+  input.value = "Please analyze my recent workouts and give me advice on progression and recovery.";
+  sendAIChatMessage();
+}
+
+async function sendAIChatMessage() {
+  const input = document.getElementById('ai-chat-input');
+  const userText = input.value.trim();
+  if (!userText) return;
+  
+  const keyInput = document.getElementById('ai-api-key');
+  const apiKey = keyInput.value.trim() || GEMINI_API_KEY;
+  if (apiKey && apiKey !== GEMINI_API_KEY) {
     state.aiApiKey = apiKey;
     saveState();
   }
   
   if (!apiKey) {
-    showToast('Enter an API key or use Copy Prompt');
+    showToast('Enter an API key first');
     return;
   }
   
-  const responseArea = document.getElementById('ai-response-area');
-  responseArea.innerHTML = `
-    <div class="ai-loading">
-      <div class="dot"></div>
-      <div class="dot"></div>
-      <div class="dot"></div>
-      <span>AI Coach is analyzing your workouts...</span>
+  if (!state.aiChatHistory) state.aiChatHistory = [];
+  
+  state.aiChatHistory.push({ role: 'user', text: userText });
+  input.value = '';
+  saveState();
+  renderAIChat();
+  
+  const container = document.getElementById('ai-chat-history');
+  container.innerHTML += `
+    <div class="ai-loading" id="ai-loading-indicator" style="align-self:flex-start;padding:0.5rem;">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
     </div>
   `;
+  container.scrollTop = container.scrollHeight;
   
-  const prompt = buildAIPrompt();
+  const contents = state.aiChatHistory.map(msg => ({
+    role: msg.role === 'user' ? 'user' : 'model',
+    parts: [{ text: msg.text }]
+  }));
   
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
+        systemInstruction: { parts: [{ text: buildAIContext() }] },
+        contents: contents,
         generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
       })
     });
@@ -2725,46 +3129,20 @@ async function getAIReview() {
     const data = await response.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response received';
     
-    responseArea.innerHTML = `<div class="ai-response">${formatAIResponse(text)}</div>`;
+    state.aiChatHistory.push({ role: 'model', text: text });
+    saveState();
   } catch(e) {
-    responseArea.innerHTML = `<div class="ai-response" style="color:var(--danger);">Error: ${e.message}\n\nTry using "Copy Prompt" and pasting into any AI chat instead.</div>`;
+    state.aiChatHistory.push({ role: 'model', text: `Error: ${e.message}` });
+    saveState();
   }
+  
+  renderAIChat();
 }
 
 function formatAIResponse(text) {
   return text
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\n/g, '<br>');
-}
-
-function copyAIPrompt() {
-  const prompt = buildAIPrompt();
-  
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(prompt).then(() => {
-      showToast('Prompt copied! Paste into any AI chat 📋');
-    }).catch(() => {
-      fallbackCopy(prompt);
-    });
-  } else {
-    fallbackCopy(prompt);
-  }
-}
-
-function fallbackCopy(text) {
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.select();
-  try {
-    document.execCommand('copy');
-    showToast('Prompt copied! Paste into any AI chat 📋');
-  } catch(e) {
-    showToast('Could not copy — try manually');
-  }
-  document.body.removeChild(ta);
 }
 
 /* =========================================================
@@ -2819,9 +3197,107 @@ function showToast(msg) {
    ========================================================= */
 function init() {
   loadState();
+  
+  // Exercise Swap Migration (Biceps on Push, Triceps on Pull)
+  if (state.plan["Day 1"] && state.plan["Day 1"].focus.includes("Triceps")) {
+    state.plan["Day 1"].focus = state.plan["Day 1"].focus.replace("Triceps", "Biceps");
+    state.plan["Day 1"].exercises = state.plan["Day 1"].exercises.map(e => e === "Triceps bar pushdown" ? "Preacher curl" : (e === "Dips" ? "Barbell curl" : e));
+    
+    state.plan["Day 2"].focus = state.plan["Day 2"].focus.replace("Biceps", "Triceps");
+    state.plan["Day 2"].exercises = state.plan["Day 2"].exercises.map(e => e === "Preacher curl" ? "Triceps bar pushdown" : (e === "Barbell curl" ? "Dips" : e));
+
+    state.plan["Day 4"].focus = state.plan["Day 4"].focus.replace("Triceps", "Biceps");
+    state.plan["Day 4"].exercises = state.plan["Day 4"].exercises.map(e => e === "Triceps rope pushdown" ? "Hammer curl" : (e === "Rope cable extension" ? "Barbell curl" : e));
+
+    state.plan["Day 5"].focus = state.plan["Day 5"].focus.replace("Biceps", "Triceps");
+    state.plan["Day 5"].exercises = state.plan["Day 5"].exercises.map(e => e === "Hammer curl" ? "Triceps rope pushdown" : (e === "Barbell curl" ? "Rope cable extension" : e));
+    saveState();
+  }
+
   renderDayTabs();
   renderExercises();
   updateTimerDisplay();
+}
+
+/* =========================================================
+   ADD NEW DAY
+   ========================================================= */
+function addNewDay() {
+  const focus = document.getElementById('new-day-focus').value.trim() || 'Custom';
+  const dayNumbers = Object.keys(state.plan).map(d => parseInt(d.replace('Day ', '')) || 0);
+  const nextNum = Math.max(...dayNumbers) + 1;
+  const dayName = 'Day ' + nextNum;
+  
+  state.plan[dayName] = { focus: focus, exercises: [] };
+  saveState();
+  closeModal('add-day-modal');
+  renderDayTabs();
+  manageDay = dayName;
+  renderManageDayTabs();
+  renderManageExercises();
+  showToast(dayName + ' added!');
+}
+
+/* =========================================================
+   PHOTO HANDLING
+   ========================================================= */
+function addPhotoToWorkout(wIdx) {
+  const input = document.getElementById('photo-input');
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const compressed = await compressImage(file, 400, 0.6);
+      if (!state.workoutHistory[wIdx].photos) {
+        state.workoutHistory[wIdx].photos = [];
+      }
+      state.workoutHistory[wIdx].photos.push(compressed);
+      saveState();
+      renderHistory();
+      showToast('Photo added! 📸');
+    } catch(err) {
+      showToast('Failed to add photo');
+      console.error(err);
+    }
+    input.value = '';
+  };
+  input.click();
+}
+
+function compressImage(file, maxSize, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > h) {
+          if (w > maxSize) { h = h * maxSize / w; w = maxSize; }
+        } else {
+          if (h > maxSize) { w = w * maxSize / h; h = maxSize; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function deleteWorkout(wIdx) {
+  if (confirm('Delete this workout from history?')) {
+    state.workoutHistory.splice(wIdx, 1);
+    saveState();
+    renderHistory();
+    showToast('Workout deleted');
+  }
 }
 
 init();
