@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="description" content="Abdullah's personal workout logger with AI coaching, muscle recovery heatmap, and PR celebrations">
@@ -16,8 +16,8 @@
    DESIGN TOKENS
    ============================================================ */
 :root {
-  --bg: #030408;
-  --bg2: #0a0d14;
+  --bg: #06080e;
+  --bg2: #0c0f18;
   --glass: rgba(255,255,255,0.03);
   --glass2: rgba(255,255,255,0.06);
   --glass3: rgba(255,255,255,0.09);
@@ -93,7 +93,7 @@ body::before {
 }
 
 /* ============================================================
-   HEADER â€” Liquid Glass
+   HEADER — Liquid Glass
    ============================================================ */
 header {
   position: sticky;
@@ -134,7 +134,7 @@ header .sub {
 }
 
 /* ============================================================
-   NAV â€” Liquid Glass Bottom Bar
+   NAV — Liquid Glass Bottom Bar
    ============================================================ */
 nav {
   position: fixed;
@@ -186,7 +186,7 @@ nav button svg { width: 22px; height: 22px; }
 nav button i { font-style: normal; font-size: 1.2rem; }
 
 /* ============================================================
-   PAGES â€” Transitions
+   PAGES — Transitions
    ============================================================ */
 .page {
   display: none;
@@ -267,7 +267,7 @@ nav button i { font-style: normal; font-size: 1.2rem; }
 }
 
 /* ============================================================
-   CARD â€” Liquid Glass
+   CARD — Liquid Glass
    ============================================================ */
 .card {
   background: var(--glass);
@@ -791,7 +791,7 @@ textarea.notes {
 .icon-btn.danger { color: var(--danger); }
 
 /* ============================================================
-   MODAL â€” Liquid Glass Sheet
+   MODAL — Liquid Glass Sheet
    ============================================================ */
 .modal-overlay {
   display: none;
@@ -846,7 +846,7 @@ textarea.notes {
 .modal-close:active { color: var(--text); }
 
 /* ============================================================
-   TOAST â€” Floating pill
+   TOAST — Floating pill
    ============================================================ */
 .toast {
   position: fixed;
@@ -1280,7 +1280,7 @@ textarea.notes {
 <!-- PR Celebration Overlay -->
 <div id="pr-celebration">
   <div class="pr-modal">
-    <div class="trophy">ðŸ†</div>
+    <div class="trophy">🏆</div>
     <div class="pr-title">NEW PR!</div>
     <div class="pr-detail" id="pr-cel-exercise"></div>
     <div class="pr-value" id="pr-cel-value"></div>
@@ -1320,7 +1320,7 @@ textarea.notes {
 
     <!-- Muscle Recovery Heatmap -->
     <div class="card">
-      <h2>ðŸ’ª Muscle Recovery</h2>
+      <h2>💪 Muscle Recovery</h2>
       <div class="chip-row" id="heatmap-range-chips"></div>
       <div class="heatmap-container">
         <div class="heatmap-body" id="heatmap-body"></div>
@@ -1335,7 +1335,7 @@ textarea.notes {
 
     <!-- Volume & Intensity -->
     <div class="card">
-      <h2>ðŸ“Š Volume & Intensity</h2>
+      <h2>📊 Volume & Intensity</h2>
       <div class="chip-row" id="volume-view-chips">
         <div class="chip active" data-vview="volume" onclick="switchVolumeView('volume')">Volume (kg)</div>
         <div class="chip" data-vview="sets" onclick="switchVolumeView('sets')">Sets</div>
@@ -1358,7 +1358,7 @@ textarea.notes {
 
     <!-- Personal Records -->
     <div class="card">
-      <h2>ðŸ… Personal records</h2>
+      <h2>🏅 Personal records</h2>
       <div id="pr-list"></div>
     </div>
   </div>
@@ -1377,8 +1377,8 @@ textarea.notes {
       </div>
     </div>
     <div style="display:flex; gap:8px; margin-top: 1rem;">
-      <button class="btn secondary" style="flex:1" onclick="clearAIChat()">ðŸ—‘ï¸ Clear Chat</button>
-      <button class="btn secondary" style="flex:1" onclick="copyAIPrompt()">ðŸ“‹ Copy Data Context</button>
+      <button class="btn secondary" style="flex:1" onclick="clearAIChat()">🗑️ Clear Chat</button>
+      <button class="btn secondary" style="flex:1" onclick="copyAIPrompt()">📋 Copy Data Context</button>
     </div>
   </div>
 
@@ -1414,13 +1414,13 @@ textarea.notes {
         <div class="chip" onclick="setTimerDefault(120)">2m</div>
         <div class="chip" onclick="setTimerDefault(180)">3m</div>
       </div>
-      <p class="muted" style="margin-top:0.6rem;">Tapping a preset sets your default rest time â€” it auto-starts every time you check off a set. Current default: <b id="default-timer-label">1:30</b>.</p>
+      <p class="muted" style="margin-top:0.6rem;">Tapping a preset sets your default rest time — it auto-starts every time you check off a set. Current default: <b id="default-timer-label">1:30</b>.</p>
     </div>
 
     <!-- Manage Exercises -->
     <div class="card">
       <div class="center-row">
-        <h2 style="margin:0;">Manage exercises â€” <span id="manage-day-name">Day 1</span></h2>
+        <h2 style="margin:0;">Manage exercises — <span id="manage-day-name">Day 1</span></h2>
       </div>
       <div class="day-tabs" id="manage-day-tabs"></div>
       <div id="manage-exercise-list"></div>
@@ -1440,7 +1440,7 @@ textarea.notes {
     <div class="card">
       <h3 style="margin-bottom:0.5rem;">Your data & backup</h3>
       <p class="muted">All data lives only in this browser/app on your phone (no account or sign-in needed). If you edit this file later and re-save it to your Home Screen, your history stays as long as you keep using the same saved page and don't clear Safari website data for it.</p>
-      <p class="muted" style="margin-top:0.6rem;">To be safe before any update, tap "Export backup" below to save a copy of your data â€” you can re-import it after.</p>
+      <p class="muted" style="margin-top:0.6rem;">To be safe before any update, tap "Export backup" below to save a copy of your data — you can re-import it after.</p>
       <div class="row-actions" style="margin-top:0.8rem;">
         <button class="small-btn primary" style="flex:1;" onclick="exportData()">Export backup</button>
         <button class="small-btn" style="flex:1;" onclick="document.getElementById('import-file').click()">Import backup</button>
@@ -1455,16 +1455,16 @@ textarea.notes {
 
 <nav>
   <button class="active" data-page="workout" onclick="switchPage('workout')">
-    <i>ðŸ‹ï¸</i><span>Workout</span>
+    <i>🏋️</i><span>Workout</span>
   </button>
   <button data-page="progress" onclick="switchPage('progress')">
-    <i>ðŸ“ˆ</i><span>Progress</span>
+    <i>📈</i><span>Progress</span>
   </button>
   <button data-page="ai" onclick="switchPage('ai')">
-    <i>ðŸ¤–</i><span>AI Coach</span>
+    <i>🤖</i><span>AI Coach</span>
   </button>
   <button data-page="settings" onclick="switchPage('settings')">
-    <i>âš™ï¸</i><span>Settings</span>
+    <i>⚙️</i><span>Settings</span>
   </button>
 </nav>
 
@@ -1742,7 +1742,7 @@ function renderExercises(skipAnimation) {
   if (dayData.exercises.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'empty';
-    empty.textContent = 'No exercises yet â€” add some in Settings';
+    empty.textContent = 'No exercises yet — add some in Settings';
     wrap.appendChild(empty);
     return;
   }
@@ -1765,7 +1765,7 @@ function renderExercises(skipAnimation) {
       <div class="ex-head-left">
         <div>
           <div class="ex-name">${exName}</div>
-          <div class="ex-meta">${completedSets}/${data.sets.length} sets ${pr ? 'Â· PR: '+pr.weight+'kg Ã— '+pr.reps : ''}</div>
+          <div class="ex-meta">${completedSets}/${data.sets.length} sets ${pr ? '· PR: '+pr.weight+'kg × '+pr.reps : ''}</div>
         </div>
       </div>
       <svg class="chev ${openExercise===exName?'open':''}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
@@ -1811,7 +1811,7 @@ function renderExercises(skipAnimation) {
       }
 
       // Set number
-      const setNumLabel = isDropChild ? 'â†“' : (idx + 1);
+      const setNumLabel = isDropChild ? '↓' : (idx + 1);
       const setNumClass = isDropChild ? 'set-num' : 'set-num';
 
       row.innerHTML = `
@@ -1842,14 +1842,14 @@ function renderExercises(skipAnimation) {
         checkBtn.classList.toggle('done');
         const meta = head.querySelector('.ex-meta');
         const cnt = data.sets.filter(s => s.done).length;
-        meta.textContent = `${cnt}/${data.sets.length} sets ${pr ? 'Â· PR: '+pr.weight+'kg Ã— '+pr.reps : ''}`;
+        meta.textContent = `${cnt}/${data.sets.length} sets ${pr ? '· PR: '+pr.weight+'kg × '+pr.reps : ''}`;
         saveState();
         if (set.done) {
           if (pr && Number(set.weight) > Number(pr.weight)) {
             weightInput.style.color = 'var(--gold)';
             weightInput.style.fontWeight = '700';
           }
-          showToast('Set logged â€” rest timer started');
+          showToast('Set logged — rest timer started');
           startRestTimer();
         } else {
           weightInput.style.color = '';
@@ -1889,7 +1889,7 @@ function renderExercises(skipAnimation) {
     
     const removeSetBtn = document.createElement('button');
     removeSetBtn.className = 'small-btn danger';
-    removeSetBtn.textContent = 'âˆ’ Remove';
+    removeSetBtn.textContent = '− Remove';
     removeSetBtn.onclick = () => {
       if (data.sets.length > 1) {
         data.sets.pop();
@@ -1936,7 +1936,7 @@ function openSetTypePicker(exName, setIdx, anchorEl) {
     const btn = document.createElement('button');
     btn.className = 'btn secondary';
     btn.style.textAlign = 'left';
-    btn.innerHTML = `<span style="color:${t.color};font-weight:800;">â—</span> ${t.label}`;
+    btn.innerHTML = `<span style="color:${t.color};font-weight:800;">●</span> ${t.label}`;
     btn.onclick = () => {
       state.exerciseData[exName].sets[setIdx].type = t.id;
       saveState();
@@ -2032,14 +2032,14 @@ function finishWorkout() {
   if (pendingPRs.length > 0) {
     celebratePR(pendingPRs[0]);
   } else {
-    showToast('Workout saved! ðŸ’ª');
+    showToast('Workout saved! 💪');
   }
   
   renderExercises();
 }
 
 /* =========================================================
-   PR CELEBRATION â€” Confetti + Haptics + Modal
+   PR CELEBRATION — Confetti + Haptics + Modal
    ========================================================= */
 function celebratePR(prData) {
   // Haptics
@@ -2050,7 +2050,7 @@ function celebratePR(prData) {
   // Show modal
   const cel = document.getElementById('pr-celebration');
   document.getElementById('pr-cel-exercise').textContent = prData.exercise;
-  document.getElementById('pr-cel-value').textContent = `${prData.weight}kg Ã— ${prData.reps} reps`;
+  document.getElementById('pr-cel-value').textContent = `${prData.weight}kg × ${prData.reps} reps`;
   cel.classList.add('active');
 
   // Fire confetti
@@ -2063,7 +2063,7 @@ function dismissPR() {
   if (pendingPRs.length > 0) {
     setTimeout(() => celebratePR(pendingPRs[0]), 400);
   } else {
-    showToast('Workout saved! ðŸ’ª');
+    showToast('Workout saved! 💪');
   }
 }
 
@@ -2287,14 +2287,14 @@ function renderPRList() {
   const wrap = document.getElementById('pr-list');
   const entries = Object.entries(state.personalRecords);
   if (entries.length === 0) {
-    wrap.innerHTML = '<div class="empty">No PRs yet â€” log a workout to start tracking!</div>';
+    wrap.innerHTML = '<div class="empty">No PRs yet — log a workout to start tracking!</div>';
     return;
   }
   entries.sort((a,b) => new Date(b[1].date) - new Date(a[1].date));
   wrap.innerHTML = entries.map(([name,pr]) => `
     <div class="pr-item">
       <div class="name">${name}</div>
-      <div class="val">${pr.weight}kg Ã— ${pr.reps}</div>
+      <div class="val">${pr.weight}kg × ${pr.reps}</div>
     </div>
   `).join('');
 }
@@ -2596,14 +2596,14 @@ function checkImbalances(dayData, muscleGroups) {
   const pull = (totalByMuscle.back || 0) + (totalByMuscle.biceps || 0);
   if (push > 0 && pull > 0) {
     const ratio = push / pull;
-    if (ratio > 2) alerts.push('âš ï¸ Push volume is much higher than pull â€” consider more back/biceps work');
-    if (ratio < 0.5) alerts.push('âš ï¸ Pull volume is much higher than push â€” consider more chest/shoulder work');
+    if (ratio > 2) alerts.push('⚠️ Push volume is much higher than pull — consider more back/biceps work');
+    if (ratio < 0.5) alerts.push('⚠️ Pull volume is much higher than push — consider more chest/shoulder work');
   }
 
   // Check quad vs hamstring
   if (totalByMuscle.quads > 0 && totalByMuscle.hamstrings > 0) {
     const ratio = totalByMuscle.quads / totalByMuscle.hamstrings;
-    if (ratio > 3) alerts.push('âš ï¸ Quads volume far exceeds hamstrings â€” add more hamstring work');
+    if (ratio > 3) alerts.push('⚠️ Quads volume far exceeds hamstrings — add more hamstring work');
   }
 
   if (alerts.length > 0) {
@@ -2641,7 +2641,7 @@ function renderHistory() {
     header.className = 'history-item';
     header.innerHTML = `
       <div>
-        <div class="day">${w.day} â€” ${w.focus}</div>
+        <div class="day">${w.day} — ${w.focus}</div>
         <div class="date">${dateStr} at ${timeStr}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
@@ -2663,11 +2663,11 @@ function renderHistory() {
         detailHTML += '<div class="history-set-list">';
         sets.forEach((s, i) => {
           const typeClass = (s.type && s.type !== 'normal') ? s.type : '';
-          detailHTML += `<div class="history-set-pill ${typeClass}">${s.weight}kg Ã— ${s.reps}${typeClass ? ' (' + typeClass + ')' : ''}</div>`;
+          detailHTML += `<div class="history-set-pill ${typeClass}">${s.weight}kg × ${s.reps}${typeClass ? ' (' + typeClass + ')' : ''}</div>`;
         });
         detailHTML += '</div>';
         if (w.exerciseNotes && w.exerciseNotes[exName]) {
-          detailHTML += `<div class="history-notes">ðŸ“ ${w.exerciseNotes[exName]}</div>`;
+          detailHTML += `<div class="history-notes">📝 ${w.exerciseNotes[exName]}</div>`;
         }
         detailHTML += '</div>';
       });
@@ -2683,8 +2683,8 @@ function renderHistory() {
     }
 
     detailHTML += '<div class="history-actions">';
-    detailHTML += `<button class="history-photo-btn" data-widx="${wIdx}">ðŸ“· Add Photo</button>`;
-    detailHTML += `<button class="history-photo-btn" style="color:var(--danger);" data-del="${wIdx}">ðŸ—‘ï¸ Delete</button>`;
+    detailHTML += `<button class="history-photo-btn" data-widx="${wIdx}">📷 Add Photo</button>`;
+    detailHTML += `<button class="history-photo-btn" style="color:var(--danger);" data-del="${wIdx}">🗑️ Delete</button>`;
     detailHTML += '</div>';
 
     detail.innerHTML = detailHTML;
@@ -2884,7 +2884,7 @@ function startRestTimer() {
       const d = document.getElementById('timer-display');
       if (b) b.textContent = 'Start';
       if (d) d.classList.remove('running');
-      showToast('Rest complete â€” go! ðŸ”¥');
+      showToast('Rest complete — go! 🔥');
       if (navigator.vibrate) navigator.vibrate([200,100,200]);
     }
     updateTimerDisplay();
@@ -2912,7 +2912,7 @@ function toggleTimer() {
         timerRunning = false;
         btn.textContent = 'Start';
         display.classList.remove('running');
-        showToast('Rest complete! ðŸ”¥');
+        showToast('Rest complete! 🔥');
         if (navigator.vibrate) navigator.vibrate([200,100,200]);
       }
       updateTimerDisplay();
@@ -3005,7 +3005,7 @@ function saveLog() {
   saveState();
   closeModal('log-modal');
   renderProgress();
-  showToast('Logged! âœ…');
+  showToast('Logged! ✅');
 }
 
 /* =========================================================
@@ -3023,7 +3023,7 @@ ${Object.entries(plan).map(([day, d]) => `**${day}** (${d.focus}): ${d.exercises
 ${recentWorkouts.map(w => {
     const d = new Date(w.date).toLocaleDateString();
     const exercises = Object.entries(w.exercises).map(([name, sets]) => {
-      return `  - ${name}: ${sets.map(s => `${s.weight}kgÃ—${s.reps}${s.type && s.type !== 'normal' ? ' ('+s.type+')' : ''}`).join(', ')}`;
+      return `  - ${name}: ${sets.map(s => `${s.weight}kg×${s.reps}${s.type && s.type !== 'normal' ? ' ('+s.type+')' : ''}`).join(', ')}`;
     }).join('\n');
     return `* ${d} - ${w.day} (${w.focus}) - Vol: ${w.totalVolume}kg\n${exercises}`;
 }).join('\n\n')}
@@ -3174,7 +3174,7 @@ function importData(event) {
       renderDayTabs();
       renderExercises();
       renderSettings();
-      showToast('Backup restored âœ…');
+      showToast('Backup restored ✅');
     } catch(err) {
       showToast('Invalid backup file');
     }
@@ -3254,7 +3254,7 @@ function addPhotoToWorkout(wIdx) {
       state.workoutHistory[wIdx].photos.push(compressed);
       saveState();
       renderHistory();
-      showToast('Photo added! ðŸ“¸');
+      showToast('Photo added! 📸');
     } catch(err) {
       showToast('Failed to add photo');
       console.error(err);
