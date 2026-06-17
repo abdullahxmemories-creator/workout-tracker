@@ -1238,6 +1238,22 @@ textarea.notes {
 }
 .history-photo-btn:active { transform: scale(0.94); }
 .page-bottom-spacer { height: 2rem; }
+#exercise-search {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  background: #121520;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  transition: all 0.3s;
+}
+#exercise-search:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(124, 92, 255, 0.2);
+}
 </style>
 </head>
 <body>
@@ -1269,6 +1285,9 @@ textarea.notes {
   <!-- WORKOUT PAGE -->
   <div class="page active" id="page-workout">
     <div class="day-tabs" id="day-tabs"></div>
+    <div class="search-bar-wrap" style="padding: 0.2rem 0 0.8rem 0;">
+      <input type="text" id="exercise-search" placeholder="🔍 Search exercises..." oninput="filterExercises()" />
+    </div>
     <div id="exercise-list"></div>
     <div class="section-gap"></div>
   </div>
@@ -1692,7 +1711,14 @@ function renderDayTabs() {
     const btn = document.createElement('button');
     btn.textContent = day;
     if (day === state.currentDay) btn.classList.add('active');
-    btn.onclick = () => { state.currentDay = day; saveState(); renderDayTabs(); renderExercises(); };
+    btn.onclick = () => {
+      state.currentDay = day;
+      saveState();
+      renderDayTabs();
+      const searchInput = document.getElementById('exercise-search');
+      if (searchInput) searchInput.value = '';
+      renderExercises();
+    };
     wrap.appendChild(btn);
   });
 }
@@ -1701,6 +1727,9 @@ function renderExercises(skipAnimation) {
   const wrap = document.getElementById('exercise-list');
   wrap.innerHTML = '';
   const dayData = state.plan[state.currentDay];
+
+  const searchInput = document.getElementById('exercise-search');
+  const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
   const focusLabel = document.createElement('div');
   focusLabel.className = 'muted';
@@ -1723,7 +1752,12 @@ function renderExercises(skipAnimation) {
     return;
   }
 
+  let renderedCount = 0;
   dayData.exercises.forEach((exName, exIdx) => {
+    if (searchQuery && !exName.toLowerCase().includes(searchQuery)) {
+      return;
+    }
+    renderedCount++;
     const data = state.exerciseData[exName];
     const card = document.createElement('div');
     card.className = 'exercise';
@@ -1896,6 +1930,17 @@ function renderExercises(skipAnimation) {
     card.appendChild(body);
     wrap.appendChild(card);
   });
+
+  if (renderedCount === 0 && dayData.exercises.length > 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = 'No exercises match your search';
+    wrap.appendChild(empty);
+  }
+}
+
+function filterExercises() {
+  renderExercises(true);
 }
 
 function getTypeLabel(type) {
