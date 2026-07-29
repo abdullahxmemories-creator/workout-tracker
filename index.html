@@ -1575,7 +1575,7 @@ const SET_TYPES = [
 ];
 
 const STORAGE_KEY = 'abdullah-tracker-state-v1';
-const GEMINI_API_KEY = 'AQ.Ab8RN6JwYw_2Ue3hWj1LTrG3Tj-VRF41Xx4ZOpgt2udNzTXVYw';
+const GEMINI_API_KEY = '';
 
 let state = {
   currentDay: "Day 1",
@@ -1652,7 +1652,7 @@ function loadState() {
   if (!state.defaultRestSeconds) state.defaultRestSeconds = 90;
   if (!state.exerciseMuscleMap) state.exerciseMuscleMap = {};
   if (!state.aiApiKey) state.aiApiKey = '';
-  if (state.aiApiKey === 'AQ.Ab8RN6KRhicWYseyVWlo82AAklXyV4RmJyBYw_wDp1fG8n1dSA') {
+  if (state.aiApiKey === '') {
     state.aiApiKey = '';
   }
   timerSeconds = state.defaultRestSeconds;
