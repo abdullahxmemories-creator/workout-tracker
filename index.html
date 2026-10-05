@@ -8,6 +8,7 @@
 <meta name="description" content="Abdullah's personal workout logger with AI coaching, muscle recovery heatmap, and PR celebrations">
 <title>Abdullah's Workout Tracker</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -64,7 +65,9 @@ body {
   font-family: var(--font);
   background: var(--bg);
   color: var(--text);
-  padding-bottom: 120px;
+  /* Fix zoom glitch by making padding generous and avoiding pure 100vh scrolling issues */
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+  margin-bottom: 120px;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
   overflow-x: hidden;
@@ -248,7 +251,7 @@ nav button i { font-style: normal; font-size: 1.2rem; }
   border-radius: var(--radius);
   padding: 1.1rem;
   margin-bottom: 0.85rem;
-  transition: transform 0.25s var(--spring), border-color 0.3s;
+  transition: border-color 0.3s; /* removed transform */
   position: relative;
   overflow: hidden;
 }
@@ -259,7 +262,7 @@ nav button i { font-style: normal; font-size: 1.2rem; }
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
 }
-.card:active { transform: scale(0.985); }
+/* Removed card:active transform to avoid accidental clicks and layout jumps while scrolling */
 .card h2 {
   font-size: 1rem;
   font-weight: 700;
@@ -312,7 +315,6 @@ nav button i { font-style: normal; font-size: 1.2rem; }
   overflow: hidden;
   transition: transform 0.2s var(--spring), border-color 0.3s;
 }
-.exercise:active { transform: scale(0.98); }
 
 .ex-head {
   display: flex;
@@ -551,7 +553,6 @@ nav button i { font-style: normal; font-size: 1.2rem; }
   padding: 0.85rem;
   transition: transform 0.2s var(--spring);
 }
-.stat-box:active { transform: scale(0.97); }
 .stat-box .label {
   font-size: 0.68rem;
   color: var(--text2);
@@ -788,6 +789,7 @@ textarea.notes {
 }
 .icon-btn:active { transform: scale(0.85); }
 .icon-btn.danger { color: var(--danger); }
+.drag-handle { touch-action: none; }
 
 /* ============================================================
    MODAL — Bottom Sheet
@@ -1249,7 +1251,15 @@ textarea.notes {
       </div>
       <button class="wt-finish" onclick="finishWorkout()">Finish</button>
     </div>
-    <div class="day-tabs" id="day-tabs"></div>
+    
+    <div class="card" style="margin-bottom: 1rem; padding: 0.8rem;">
+      <div class="center-row" style="margin:0;">
+        <h3 style="margin:0; font-size: 0.9rem;">Routine: <span id="current-day-name-display">Day 1</span></h3>
+        <button class="small-btn secondary" onclick="openRoutineEditor()">Edit Routine</button>
+      </div>
+      <div class="day-tabs" id="day-tabs" style="margin-top: 0.8rem; margin-bottom: 0;"></div>
+    </div>
+    
     <div id="exercise-list"></div>
     <div class="page-bottom-spacer"></div>
   </div>
@@ -1370,6 +1380,17 @@ textarea.notes {
         <div class="chip" onclick="setTimerDefault(180)">3m</div>
       </div>
       <p class="muted" style="margin-top:0.6rem;">Tapping a preset sets your default rest time — it auto-starts every time you check off a set. Current default: <b id="default-timer-label">1:30</b>.</p>
+      
+      <!-- Notifications toggle -->
+      <div style="margin-top: 1rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+        <div class="center-row" style="margin: 0;">
+          <div>
+            <div style="font-size: 0.88rem; font-weight: 600;">Push Notifications</div>
+            <div class="muted" style="font-size: 0.75rem;">Get notified when rest is over</div>
+          </div>
+          <button class="small-btn secondary" id="noti-btn" onclick="requestNotificationPermission()">Enable</button>
+        </div>
+      </div>
     </div>
 
     <!-- Manage Exercises -->
@@ -1391,15 +1412,15 @@ textarea.notes {
       </div>
     </div>
 
-    <!-- Backup -->
+    <!-- Backup & Import -->
     <div class="card">
       <h3 style="margin-bottom:0.5rem;">Your data & backup</h3>
       <p class="muted">All data lives only in this browser. Export a backup before any update to stay safe.</p>
       <div class="row-actions" style="margin-top:0.8rem;">
         <button class="small-btn primary" style="flex:1;" onclick="exportData()">Export backup</button>
-        <button class="small-btn" style="flex:1;" onclick="document.getElementById('import-file').click()">Import backup</button>
+        <button class="small-btn" style="flex:1;" onclick="document.getElementById('import-file').click()">Import JSON/CSV/TXT</button>
       </div>
-      <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)" />
+      <input type="file" id="import-file" accept=".json,.csv,.txt" style="display:none;" onchange="importData(event)" />
     </div>
 
     <div class="page-bottom-spacer"></div>
@@ -1421,6 +1442,22 @@ textarea.notes {
     <i>⚙️</i><span>Settings</span>
   </button>
 </nav>
+
+<!-- Routine Editor Modal -->
+<div class="modal-overlay" id="routine-modal">
+  <div class="modal">
+    <h3 style="margin-bottom:0.5rem;">Edit Routine: <span id="routine-modal-day"></span></h3>
+    <div class="form-row">
+      <label>Focus</label>
+      <input type="text" id="routine-modal-focus" onchange="updateRoutineFocus(this.value)"/>
+    </div>
+    <div id="routine-modal-list" style="margin: 1rem 0;"></div>
+    <div class="row-actions">
+      <button class="btn secondary" style="flex:1" onclick="openAddExerciseModal()">+ Add exercise</button>
+      <button class="btn" style="flex:1" onclick="closeRoutineEditor()">Done</button>
+    </div>
+  </div>
+</div>
 
 <!-- Log Modal (weight/measurement) -->
 <div class="modal-overlay" id="log-modal">
@@ -1501,28 +1538,28 @@ textarea.notes {
    ========================================================= */
 const DEFAULT_PLAN = {
   "Day 1": { focus: "Chest, Shoulders, Biceps", exercises: [
-    "Bench press","Chest Cable fly","Shoulder press (dumbbell/smith)","Cable lateral raise",
-    "Rear delt fly","Preacher curl","Hammer curl","Hammer to biceps curl with hold"
+    "Bench press","Chest Cable fly","Shoulder press (barbell)","Shoulder press (dumbbell)",
+    "Face pull","Preacher curl","Biceps curl","Ab: Hanging leg raise"
   ]},
   "Day 2": { focus: "Back, Triceps", exercises: [
-    "Deadlift","Lats pulldown wide grip","1 arm cable rowing","Lats pullover (cable)-optional",
-    "Single arm triceps pushdown","Rope cable extension","Dips"
+    "Deadlift","Lats pulldown wide grip","Cable rowing (wide grip barbell)","back extensions",
+    "Single arm triceps pushdown","Rope cable extension","Triceps V pushdown","Ab: Lying leg raise"
   ]},
   "Day 3": { focus: "Legs", exercises: [
-    "Squats","Leg extension","Lying leg curl","Reverse barbell curl","Wrist extensions",
-    "Hammer curl","Calf raise","Ab: Crunches+twist"
+    "Squats","Leg extension","Lying leg curl","Reverse barbell curl","Calf raise",
+    "Hammer curl","Neck curl","Plank"
   ]},
   "Day 4": { focus: "Chest, Shoulders, Biceps", exercises: [
-    "Incline dumbbell press","Bench press","Shoulder press-machine",
-    "Cable lateral raise","Face pull","Barbell curl","Biceps curl","Ab: Hanging leg raise"
+    "Incline dumbbell press","Bench press","Shoulder press-smith",
+    "Cable lateral raise","Rear delt fly","Barbell curl","Biceps curl"
   ]},
   "Day 5": { focus: "Back, Triceps", exercises: [
-    "Barbell rowing","Lats pulldown close grip","Cable rowing (wide grip barbell)",
-    "back extensions","Triceps rope/barbell pushdown","Rope cable extension","Ab: Lying leg raise"
+    "Barbell rowing","Lats pulldown close grip","2 arm cable rowing",
+    "Triceps rope/barbell pushdown","Barbell cable extension","Dips"
   ]},
   "Day 6": { focus: "Legs", exercises: [
-    "Leg press","Lying leg curl","Reverse barbell curl","Lateral raise-Machine",
-    "Biceps curl","Calf raise","Ab: Plank"
+    "Leg press","Lying leg curl","Calf raise","Reverse barbell curl",
+    "Wrist extensions","Hammer curl","Neck curl","Plank"
   ]}
 };
 
@@ -1552,7 +1589,7 @@ const SET_TYPES = [
   { id:'giant', label:'Giant Set', color:'var(--giant-set)' }
 ];
 
-const STORAGE_KEY = 'abdullah-tracker-state-v1';
+const STORAGE_KEY = 'abdullah-tracker-state-v2';
 
 let state = {
   currentDay: "Day 1",
@@ -1565,7 +1602,7 @@ let state = {
   exerciseHistory: {},
   defaultRestSeconds: 90,
   exerciseMuscleMap: {},
-  aiApiKey: 'AQ.Ab8RN6JwYw_2Ue3hWj1LTrG3Tj-VRF41Xx4ZOpgt2udNzTXVYw',
+  aiApiKey: '',
   workoutStartTime: null
 };
 
@@ -1576,10 +1613,11 @@ let logModalType = null;
 let manageDay = "Day 1";
 let openExercise = null;
 let heatmapRange = 7;
-let historyViewMode = 'workouts'; // 'workouts' or 'exercises'
+let historyViewMode = 'workouts';
 let historyExerciseFilter = null;
 let workoutTimerRAF = null;
 let workoutAutoSaveTimeout = null;
+let routineSortable = null;
 
 /* =========================================================
    MUSCLE DETECTION
@@ -1622,13 +1660,18 @@ function initExerciseData() {
 
 function loadState() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    // Try v2, fallback to v1, fallback to fresh
+    let raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      raw = localStorage.getItem('abdullah-tracker-state-v1');
+    }
+    
     if (raw) {
       const loaded = JSON.parse(raw);
       state = Object.assign(state, loaded);
-      if (!state.plan || !state.planVersion || state.planVersion < 3) {
+      // Ensure plan exists
+      if (!state.plan || Object.keys(state.plan).length === 0) {
         state.plan = JSON.parse(JSON.stringify(DEFAULT_PLAN));
-        state.planVersion = 3;
       }
     }
   } catch(e) {
@@ -1637,8 +1680,9 @@ function loadState() {
   initExerciseData();
   if (!state.defaultRestSeconds) state.defaultRestSeconds = 90;
   if (!state.exerciseMuscleMap) state.exerciseMuscleMap = {};
-  if (!state.aiApiKey) state.aiApiKey = 'AQ.Ab8RN6JwYw_2Ue3hWj1LTrG3Tj-VRF41Xx4ZOpgt2udNzTXVYw';
   if (!state.workoutStartTime) state.workoutStartTime = null;
+  if (!state.currentDay || !state.plan[state.currentDay]) state.currentDay = Object.keys(state.plan)[0];
+  manageDay = state.currentDay;
 }
 
 function saveState() {
@@ -1659,13 +1703,16 @@ function switchPage(page) {
   });
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   const el = document.getElementById('page-'+page);
-  // Use rAF to trigger transition
   requestAnimationFrame(() => {
     el.classList.add('active');
   });
   document.querySelector(`nav button[data-page="${page}"]`).classList.add('active');
   if (page === 'progress') renderProgress();
   if (page === 'settings') renderSettings();
+  if (page === 'workout') {
+    renderDayTabs();
+    renderExercises(true);
+  }
 }
 
 /* =========================================================
@@ -1677,7 +1724,6 @@ function startWorkoutTimer() {
   saveState();
   showWorkoutTimer();
 
-  // Auto-stop after 3 hours
   if (workoutAutoSaveTimeout) clearTimeout(workoutAutoSaveTimeout);
   workoutAutoSaveTimeout = setTimeout(() => {
     if (state.workoutStartTime) {
@@ -1728,11 +1774,105 @@ function stopWorkoutTimer() {
 }
 
 /* =========================================================
+   ROUTINE EDITOR MODAL
+   ========================================================= */
+function openRoutineEditor() {
+  manageDay = state.currentDay; // Link settings manager to current workout day
+  document.getElementById('routine-modal-day').textContent = manageDay;
+  document.getElementById('routine-modal-focus').value = state.plan[manageDay].focus;
+  renderRoutineEditorList();
+  document.getElementById('routine-modal').classList.add('open');
+}
+
+function closeRoutineEditor() {
+  document.getElementById('routine-modal').classList.remove('open');
+  // Re-render workout page
+  renderDayTabs();
+  renderExercises(true);
+}
+
+function updateRoutineFocus(val) {
+  if (state.plan[manageDay]) {
+    state.plan[manageDay].focus = val;
+    saveState();
+  }
+}
+
+function renderRoutineEditorList() {
+  const wrap = document.getElementById('routine-modal-list');
+  const list = state.plan[manageDay].exercises;
+  
+  if (list.length === 0) {
+    wrap.innerHTML = '<div class="empty">No exercises in this day</div>';
+    return;
+  }
+  
+  wrap.innerHTML = '';
+  list.forEach((ex, idx) => {
+    const muscle = detectMuscle(ex);
+    const row = document.createElement('div');
+    row.className = 'manage-item';
+    
+    const textPart = document.createElement('div');
+    textPart.innerHTML = `
+      <div class="name">${ex}</div>
+      <div style="font-size:0.68rem;color:var(--text3);margin-top:2px;text-transform:capitalize;">${muscle}</div>
+    `;
+    
+    const actionsPart = document.createElement('div');
+    actionsPart.style.cssText = 'display:flex; gap:4px; align-items:center;';
+    
+    const editBtn = document.createElement('div');
+    editBtn.className = 'icon-btn';
+    editBtn.innerHTML = '✎';
+    editBtn.onclick = () => {
+      editExerciseName(idx, true);
+    };
+    
+    const delBtn = document.createElement('div');
+    delBtn.className = 'icon-btn danger';
+    delBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6h14z"/></svg>';
+    delBtn.onclick = () => {
+      removeExercise(idx, true);
+    };
+    
+    const dragHandle = document.createElement('div');
+    dragHandle.className = 'icon-btn drag-handle';
+    dragHandle.innerHTML = '☰';
+    dragHandle.style.cursor = 'grab';
+    
+    actionsPart.appendChild(editBtn);
+    actionsPart.appendChild(delBtn);
+    actionsPart.appendChild(dragHandle);
+    
+    row.appendChild(textPart);
+    row.appendChild(actionsPart);
+    wrap.appendChild(row);
+  });
+
+  if (window.Sortable) {
+    if (routineSortable) routineSortable.destroy();
+    routineSortable = new Sortable(wrap, {
+      handle: '.drag-handle',
+      animation: 150,
+      onEnd: function (evt) {
+        const list = state.plan[manageDay].exercises;
+        const item = list.splice(evt.oldIndex, 1)[0];
+        list.splice(evt.newIndex, 0, item);
+        saveState();
+      }
+    });
+  }
+}
+
+/* =========================================================
    WORKOUT PAGE
    ========================================================= */
 function renderDayTabs() {
   const wrap = document.getElementById('day-tabs');
   wrap.innerHTML = '';
+  document.getElementById('current-day-name-display').textContent = state.currentDay;
+  
   Object.keys(state.plan).forEach(day => {
     const btn = document.createElement('button');
     btn.textContent = day;
@@ -1747,6 +1887,8 @@ function renderExercises(skipAnimation) {
   wrap.innerHTML = '';
   const dayData = state.plan[state.currentDay];
 
+  if (!dayData) return;
+
   const focusLabel = document.createElement('div');
   focusLabel.className = 'muted';
   focusLabel.style.marginBottom = '0.7rem';
@@ -1756,7 +1898,7 @@ function renderExercises(skipAnimation) {
   if (dayData.exercises.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'empty';
-    empty.textContent = 'No exercises yet — add some in Settings';
+    empty.textContent = 'No exercises yet — add some in Settings or Edit Routine';
     wrap.appendChild(empty);
     return;
   }
@@ -1958,9 +2100,13 @@ function finishWorkout() {
   dayData.exercises.forEach(exName => {
     const data = state.exerciseData[exName];
     if (!data) return;
-    const setsLogged = data.sets.filter(s => s.reps && s.weight);
+    // ONLY SAVE SETS THAT ARE TICKED (done === true)
+    const setsLogged = data.sets.filter(s => s.done && s.reps && s.weight);
+    if (setsLogged.length === 0) return;
+    
     const prSets = setsLogged.filter(s => s.type !== 'warmup');
-    if (setsLogged.length > 0) hasData = true;
+    hasData = true;
+    
     exercisesLog[exName] = setsLogged.map(s => ({
       reps: Number(s.reps),
       weight: Number(s.weight),
@@ -2005,8 +2151,10 @@ function finishWorkout() {
   // Collect exercise notes for history
   const exerciseNotes = {};
   dayData.exercises.forEach(exName => {
-    const data = state.exerciseData[exName];
-    if (data && data.notes) exerciseNotes[exName] = data.notes;
+    if (exercisesLog[exName]) {
+      const data = state.exerciseData[exName];
+      if (data && data.notes) exerciseNotes[exName] = data.notes;
+    }
   });
 
   state.workoutHistory.unshift({
@@ -2159,10 +2307,9 @@ function renderWeightChart() {
   weightChart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: data.map(d => formatDate(d.date)),
       datasets: [{
         label: 'Weight (kg)',
-        data: data.map(d => d.value),
+        data: data.map(d => ({x: new Date(d.date), y: d.value})),
         borderColor: '#f43f5e',
         backgroundColor: 'rgba(244,63,94,0.08)',
         fill: true,
@@ -2199,10 +2346,9 @@ function renderMeasurementChart() {
   measurementChart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: data.map(d => formatDate(d.date)),
       datasets: [{
         label: selectedMeasurement + ' (cm)',
-        data: data.map(d => d.value),
+        data: data.map(d => ({x: new Date(d.date), y: d.value})),
         borderColor: '#10b981',
         backgroundColor: 'rgba(16,185,129,0.08)',
         fill: true, tension: 0.4, pointRadius: 4,
@@ -2255,17 +2401,17 @@ function renderLiftChart() {
     ctx.getContext('2d').clearRect(0,0,ctx.width,ctx.height);
     return;
   }
-  let values, label, color;
-  if (selectedMetric==='weight') { values = data.map(d=>d.topWeight); label='Top weight (kg)'; color='#f43f5e'; }
-  else if (selectedMetric==='volume') { values = data.map(d=>d.volume); label='Volume (kg)'; color='#f59e0b'; }
-  else { values = data.map(d=>d.topReps); label='Top reps'; color='#fb923c'; }
+  
+  let mapFn, label, color;
+  if (selectedMetric==='weight') { mapFn = d => ({x: new Date(d.date), y: d.topWeight}); label='Top weight (kg)'; color='#f43f5e'; }
+  else if (selectedMetric==='volume') { mapFn = d => ({x: new Date(d.date), y: d.volume}); label='Volume (kg)'; color='#f59e0b'; }
+  else { mapFn = d => ({x: new Date(d.date), y: d.topReps}); label='Top reps'; color='#fb923c'; }
 
   liftChart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: data.map(d => formatDate(d.date)),
       datasets: [{
-        label, data: values, borderColor: color,
+        label, data: data.map(mapFn), borderColor: color,
         backgroundColor: color+'15', fill:true, tension:0.4, pointRadius:4,
         pointBackgroundColor: color,
         borderWidth: 2
@@ -2296,15 +2442,15 @@ function chartOptions() {
     responsive: true, maintainAspectRatio: false,
     plugins: { legend: { labels: { color: '#8b919e', font:{size:11, family:'Inter'} } } },
     scales: {
-      x: { ticks: { color: '#555b67', font:{size:10, family:'Inter'} }, grid:{ color:'rgba(255,255,255,0.04)' } },
+      x: { 
+        type: 'time',
+        time: { tooltipFormat: 'MMM d, yyyy' },
+        ticks: { color: '#555b67', font:{size:10, family:'Inter'} }, 
+        grid:{ color:'rgba(255,255,255,0.04)' } 
+      },
       y: { ticks: { color: '#555b67', font:{size:10, family:'Inter'} }, grid:{ color:'rgba(255,255,255,0.04)' } }
     }
   };
-}
-
-function formatDate(iso) {
-  const d = new Date(iso);
-  return (d.getMonth()+1)+'/'+d.getDate();
 }
 
 /* =========================================================
@@ -2752,6 +2898,7 @@ function renderSettings() {
 
   renderHistory();
   renderAIChat();
+  updateNotificationButton();
 }
 
 function renderManageDayTabs() {
@@ -2827,7 +2974,8 @@ function renderManageExercises() {
   });
 
   if (window.Sortable) {
-    new Sortable(wrap, {
+    if (routineSortable) routineSortable.destroy();
+    routineSortable = new Sortable(wrap, {
       handle: '.drag-handle',
       animation: 150,
       onEnd: function (evt) {
@@ -2859,9 +3007,7 @@ function toggleHistoryCard() {
   }
 }
 
-
-
-function editExerciseName(idx) {
+function editExerciseName(idx, fromRoutineModal = false) {
   const list = state.plan[manageDay].exercises;
   const oldName = list[idx];
   const newName = prompt("Edit exercise name:", oldName);
@@ -2901,22 +3047,26 @@ function editExerciseName(idx) {
     });
 
     saveState();
-    renderManageExercises();
-    renderDayTabs();
-    renderExercises(true);
+    if (fromRoutineModal) {
+      renderRoutineEditorList();
+    } else {
+      renderManageExercises();
+    }
     showToast('Exercise renamed!');
   }
 }
 
-function removeExercise(idx) {
+function removeExercise(idx, fromRoutineModal = false) {
   const list = state.plan[manageDay].exercises;
   const ex = list[idx];
   if (confirm(`Remove "${ex}" from ${manageDay}? Its history and PRs will be kept.`)) {
     list.splice(idx, 1);
     saveState();
-    renderManageExercises();
-    renderDayTabs();
-    renderExercises(true);
+    if (fromRoutineModal) {
+      renderRoutineEditorList();
+    } else {
+      renderManageExercises();
+    }
   }
 }
 
@@ -2951,10 +3101,12 @@ function addExercise() {
 
   saveState();
   closeModal('add-ex-modal');
-  renderManageExercises();
-  // Always sync workout tab
-  renderDayTabs();
-  renderExercises(true);
+  
+  if (document.getElementById('routine-modal').classList.contains('open')) {
+    renderRoutineEditorList();
+  } else {
+    renderManageExercises();
+  }
   showToast('Exercise added');
 }
 
@@ -3002,6 +3154,15 @@ function restTimerTick() {
     updateRestTimerDisplay();
     showToast('Rest complete — go! 🔥');
     if (navigator.vibrate) navigator.vibrate([200,100,200]);
+    
+    // Send Notification if permitted
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification("Rest is over! 🔥", {
+        body: "Time for your next set. Let's go!",
+        icon: "/icon.png" // Ensure you add an icon.png if hosting
+      });
+    }
+    
     return;
   }
 
@@ -3087,11 +3248,56 @@ document.addEventListener('visibilitychange', () => {
       updateRestTimerDisplay();
       showToast('Rest complete — go! 🔥');
       if (navigator.vibrate) navigator.vibrate([200,100,200]);
+      
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("Rest is over! 🔥", {
+          body: "Time for your next set. Let's go!"
+        });
+      }
     } else {
       restTimerTick();
     }
   }
 });
+
+/* =========================================================
+   NOTIFICATIONS
+   ========================================================= */
+function updateNotificationButton() {
+  const btn = document.getElementById('noti-btn');
+  if (!btn) return;
+  if (!("Notification" in window)) {
+    btn.textContent = 'Unsupported';
+    btn.disabled = true;
+    return;
+  }
+  if (Notification.permission === 'granted') {
+    btn.textContent = 'Enabled';
+    btn.classList.add('done');
+    btn.style.color = 'var(--accent2)';
+    btn.style.borderColor = 'var(--accent2)';
+  } else if (Notification.permission === 'denied') {
+    btn.textContent = 'Denied';
+    btn.disabled = true;
+  } else {
+    btn.textContent = 'Enable';
+  }
+}
+
+function requestNotificationPermission() {
+  if (!("Notification" in window)) {
+    showToast('Notifications not supported on this browser.');
+    return;
+  }
+  Notification.requestPermission().then(permission => {
+    updateNotificationButton();
+    if (permission === 'granted') {
+      showToast('Notifications enabled! 🔔');
+    } else {
+      showToast('Notifications permission denied.');
+    }
+  });
+}
 
 /* =========================================================
    LOG MODAL
@@ -3164,7 +3370,7 @@ function saveLog() {
 }
 
 /* =========================================================
-   AI COACH CHAT — Streaming with gemini-2.0-flash
+   AI COACH CHAT — Streaming with Gemini Models
    ========================================================= */
 function buildAIContext() {
   const recentWorkouts = state.workoutHistory.slice(0, 5);
@@ -3256,6 +3462,7 @@ async function sendAIChatMessage() {
 
   if (!apiKey) {
     showToast('Enter an API key in Settings first');
+    switchPage('settings');
     return;
   }
 
@@ -3286,8 +3493,14 @@ async function sendAIChatMessage() {
     if (aiStreamAbort) aiStreamAbort.abort();
     aiStreamAbort = new AbortController();
 
+    // Use gemini-1.5-flash as it's the widely available general fast model
+    // that supports system instructions and generation. 2.0-flash might not be publicly released yet or endpoints differ.
+    // Also, handle Vertex/AI Studio different formats based on the key
+    const isVertex = apiKey.startsWith('ya29.') || apiKey.includes('...'); // simplify, mostly use AI studio endpoint
+    const url = \`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=\${apiKey}\`;
+
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${apiKey}`,
+      url,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3295,16 +3508,16 @@ async function sendAIChatMessage() {
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: buildAIContext() }] },
           contents: contents,
-          generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
+          generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
         })
       }
     );
 
-    if (response.status === 401 || response.status === 403) {
-      throw new Error("Invalid API Key. Update it in Settings → Gemini AI Integration.");
+    if (response.status === 401 || response.status === 403 || response.status === 400) {
+      throw new Error("Invalid API Key or Model. Update it in Settings → Gemini AI Integration. If it's a Vertex key it needs different URL.");
     }
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      throw new Error(\`API error: \${response.status}\`);
     }
 
     // Stream the response
@@ -3318,7 +3531,7 @@ async function sendAIChatMessage() {
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
+      const lines = buffer.split('\\n');
       buffer = lines.pop();
 
       for (const line of lines) {
@@ -3337,15 +3550,28 @@ async function sendAIChatMessage() {
         }
       }
     }
+    
+    // Process remaining buffer if it's not empty and looks like a valid JSON
+    if (buffer.startsWith('data: ')) {
+      try {
+        const parsed = JSON.parse(buffer.slice(6).trim());
+        const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          fullText += text;
+          streamDiv.innerHTML = formatAIResponse(fullText);
+          container.scrollTop = container.scrollHeight;
+        }
+      } catch(e) {}
+    }
 
-    if (!fullText) fullText = 'No response received. Check your API key.';
+    if (!fullText) fullText = 'No response received. Check your API key and connection.';
     state.aiChatHistory.push({ role: 'model', text: fullText });
     saveState();
 
   } catch(e) {
     if (e.name === 'AbortError') return;
-    const errText = `Error: ${e.message}`;
-    streamDiv.innerHTML = `<span style="color:var(--danger);">${errText}</span>`;
+    const errText = \`Error: \${e.message}\`;
+    streamDiv.innerHTML = \`<span style="color:var(--danger);">\${errText}</span>\`;
     state.aiChatHistory.push({ role: 'model', text: errText });
     saveState();
   }
@@ -3356,17 +3582,16 @@ async function sendAIChatMessage() {
 
 function formatAIResponse(text) {
   return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/`(.*?)`/g, '<code style="background:rgba(244,63,94,0.1);padding:1px 4px;border-radius:3px;font-size:0.82rem;">$1</code>')
-    .replace(/\n/g, '<br>');
+    .replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>')
+    .replace(/\\*(.*?)\\*/g, '<em>$1</em>')
+    .replace(/\`(.*?)\`/g, '<code style="background:rgba(244,63,94,0.1);padding:1px 4px;border-radius:3px;font-size:0.82rem;">$1</code>')
+    .replace(/\\n/g, '<br>');
 }
 
 /* =========================================================
-   BACKUP / EXPORT / IMPORT — Fixed
+   BACKUP / EXPORT / IMPORT
    ========================================================= */
 function exportData() {
-  // Create a clean, organised export
   const exportObj = {
     _exportInfo: {
       exportDate: new Date().toISOString(),
@@ -3403,131 +3628,134 @@ function exportData() {
 function importData(event) {
   const file = event.target.files[0];
   if (!file) return;
+  
   const reader = new FileReader();
   reader.onload = (e) => {
-    try {
-      const loaded = JSON.parse(e.target.result);
-      // Remove export metadata
-      delete loaded._exportInfo;
+    const content = e.target.result;
+    
+    // Check if it's JSON
+    if (file.name.endsWith('.json')) {
+      try {
+        const loaded = JSON.parse(content);
+        delete loaded._exportInfo;
 
-      // Merge into state
-      state = Object.assign(state, loaded);
-      if (!state.plan) state.plan = JSON.parse(JSON.stringify(DEFAULT_PLAN));
-      if (!state.exerciseData) state.exerciseData = {};
-      if (!state.workoutHistory) state.workoutHistory = [];
-      if (!state.exerciseHistory) state.exerciseHistory = {};
-      if (!state.personalRecords) state.personalRecords = {};
-      if (!state.bodyWeight) state.bodyWeight = [];
-      if (!state.measurements) state.measurements = {};
-      if (!state.exerciseMuscleMap) state.exerciseMuscleMap = {};
-      if (!state.aiChatHistory) state.aiChatHistory = [];
+        state = Object.assign(state, loaded);
+        if (!state.plan) state.plan = JSON.parse(JSON.stringify(DEFAULT_PLAN));
+        if (!state.exerciseData) state.exerciseData = {};
+        if (!state.workoutHistory) state.workoutHistory = [];
+        if (!state.exerciseHistory) state.exerciseHistory = {};
+        if (!state.personalRecords) state.personalRecords = {};
+        if (!state.bodyWeight) state.bodyWeight = [];
+        if (!state.measurements) state.measurements = {};
+        if (!state.exerciseMuscleMap) state.exerciseMuscleMap = {};
+        if (!state.aiChatHistory) state.aiChatHistory = [];
 
-      // CRITICAL: Re-initialise exercise data for all exercises in the plan
-      initExerciseData();
-
-      saveState();
-      renderDayTabs();
-      renderExercises();
-      renderSettings();
-      showToast(`Backup restored — ${state.workoutHistory.length} workouts loaded ✅`);
-    } catch(err) {
-      console.error('Import error:', err);
-      showToast('Invalid backup file');
+        initExerciseData();
+        saveState();
+        renderDayTabs();
+        renderExercises();
+        renderSettings();
+        showToast(\`Backup restored — \${state.workoutHistory.length} workouts loaded ✅\`);
+      } catch(err) {
+        console.error('Import error:', err);
+        showToast('Invalid JSON backup file');
+      }
+    } 
+    // Handle plain text/CSV routine import
+    else {
+      try {
+        parseAndImportRoutine(content);
+        showToast('Routine imported successfully! ✅');
+      } catch (err) {
+        console.error('Routine parse error:', err);
+        showToast('Could not parse routine format.');
+      }
     }
   };
   reader.readAsText(file);
-  // Reset file input so re-importing works
   event.target.value = '';
 }
 
-/* =========================================================
-   TOAST
-   ========================================================= */
-function showToast(msg) {
-  const toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2200);
-}
-
-/* =========================================================
-   ADD NEW DAY
-   ========================================================= */
-function addNewDay() {
-  const focus = document.getElementById('new-day-focus').value.trim() || 'Custom';
-  const dayNumbers = Object.keys(state.plan).map(d => parseInt(d.replace('Day ', '')) || 0);
-  const nextNum = Math.max(...dayNumbers) + 1;
-  const dayName = 'Day ' + nextNum;
-
-  state.plan[dayName] = { focus: focus, exercises: [] };
-  saveState();
-  closeModal('add-day-modal');
-  renderDayTabs();
-  manageDay = dayName;
-  renderManageDayTabs();
-  renderManageExercises();
-  showToast(dayName + ' added!');
-}
-
-/* =========================================================
-   PHOTO HANDLING
-   ========================================================= */
-function addPhotoToWorkout(wIdx) {
-  const input = document.getElementById('photo-input');
-  input.onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    try {
-      const compressed = await compressImage(file, 400, 0.6);
-      if (!state.workoutHistory[wIdx].photos) {
-        state.workoutHistory[wIdx].photos = [];
-      }
-      state.workoutHistory[wIdx].photos.push(compressed);
-      saveState();
-      renderHistory();
-      showToast('Photo added! 📸');
-    } catch(err) {
-      showToast('Failed to add photo');
-      console.error(err);
-    }
-    input.value = '';
-  };
-  input.click();
-}
-
-function compressImage(file, maxSize, quality) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let w = img.width, h = img.height;
-        if (w > h) {
-          if (w > maxSize) { h = h * maxSize / w; w = maxSize; }
-        } else {
-          if (h > maxSize) { w = w * maxSize / h; h = maxSize; }
+function parseAndImportRoutine(text) {
+  // A simple parser for the provided format or general list format
+  const lines = text.split('\\n').map(l => l.trim()).filter(l => l);
+  let newPlan = {};
+  let currentDay = null;
+  
+  // Try to find columns or tab-separated structure if it's the specific format given
+  const hasTabs = lines.some(l => l.includes('\\t'));
+  
+  if (hasTabs) {
+    // Parse tab separated columns like the provided prompt
+    let columns = [];
+    lines.forEach(line => {
+      // Find header row with "Day X"
+      if (line.match(/Day \\d/i) && !line.includes('(')) { // Headers
+        columns = line.split('\\t').map(c => c.trim()).filter(c => c);
+        columns.forEach(c => {
+          if (!newPlan[c]) newPlan[c] = { focus: 'Custom', exercises: [] };
+        });
+      } 
+      // Focus line (e.g., "Day 1 & Day 4 (Chest...)")
+      else if (line.match(/Day \\d.*\\(/i)) {
+        // extract focus
+        const focusMatch = line.match(/\\((.*?)\\)/);
+        const focus = focusMatch ? focusMatch[1] : 'Custom';
+        const dayMatches = line.match(/Day \\d+/gi);
+        if (dayMatches) {
+          dayMatches.forEach(d => {
+            if (!newPlan[d]) newPlan[d] = { focus: focus, exercises: [] };
+            else newPlan[d].focus = focus;
+          });
         }
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.onerror = reject;
-      img.src = e.target.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-function deleteWorkout(wIdx) {
-  if (confirm('Delete this workout from history?')) {
-    state.workoutHistory.splice(wIdx, 1);
+      }
+      // Exercise rows
+      else if (columns.length > 0) {
+        // Remove leading numbers like "1. "
+        let cleanLine = line.replace(/^\\d+\\.\\s*/, '');
+        let cells = cleanLine.split('\\t').map(c => c.trim());
+        
+        cells.forEach((cell, idx) => {
+          if (cell && columns[idx] && newPlan[columns[idx]]) {
+            newPlan[columns[idx]].exercises.push(cell);
+          }
+        });
+      }
+    });
+  } else {
+    // Fallback: simple line-by-line parsing
+    lines.forEach(line => {
+      if (line.match(/^Day \\d+(:|-)?/i)) {
+        // Found a day header
+        currentDay = line.replace(/(:|-)/g, '').trim();
+        if (!newPlan[currentDay]) newPlan[currentDay] = { focus: 'Custom', exercises: [] };
+      } 
+      else if (line.match(/focus:/i)) {
+        if (currentDay) newPlan[currentDay].focus = line.replace(/focus:/i, '').trim();
+      }
+      else if (currentDay) {
+        let ex = line.replace(/^\\d+\\.\\s*/, '').trim();
+        if (ex && ex !== '-' && !ex.match(/^Day /i)) {
+          newPlan[currentDay].exercises.push(ex);
+        }
+      }
+    });
+  }
+  
+  if (Object.keys(newPlan).length > 0) {
+    state.plan = newPlan;
+    state.currentDay = Object.keys(newPlan)[0];
+    manageDay = state.currentDay;
+    initExerciseData();
     saveState();
-    renderHistory();
-    showToast('Workout deleted');
+    
+    // Refresh UI
+    renderDayTabs();
+    renderExercises(true);
+    renderManageDayTabs();
+    renderManageExercises();
+  } else {
+    throw new Error('No valid routine structure found');
   }
 }
 
@@ -3561,6 +3789,17 @@ function init() {
 }
 
 init();
+
+// Simple Toast Notification Logic
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => {
+    t.classList.remove('show');
+  }, 3000);
+}
 </script>
 </body>
 </html>
+
