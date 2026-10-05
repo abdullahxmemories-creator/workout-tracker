@@ -1640,6 +1640,7 @@ function detectMuscle(exerciseName) {
    ========================================================= */
 function initExerciseData() {
   Object.values(state.plan).forEach(d => {
+    if (!d || !d.exercises) return; // Safety check
     d.exercises.forEach(ex => {
       if (!state.exerciseData[ex]) {
         state.exerciseData[ex] = {
@@ -1651,9 +1652,11 @@ function initExerciseData() {
           notes: ''
         };
       }
-      state.exerciseData[ex].sets.forEach(s => {
-        if (!s.type) s.type = 'normal';
-      });
+      if (Array.isArray(state.exerciseData[ex].sets)) {
+        state.exerciseData[ex].sets.forEach(s => {
+          if (!s.type) s.type = 'normal';
+        });
+      }
     });
   });
 }
@@ -1668,15 +1671,41 @@ function loadState() {
     
     if (raw) {
       const loaded = JSON.parse(raw);
+      
+      // Migrate old plan format if it exists (values were arrays)
+      if (loaded.plan) {
+        let isOldFormat = false;
+        for (const [day, data] of Object.entries(loaded.plan)) {
+          if (Array.isArray(data)) {
+            isOldFormat = true;
+            loaded.plan[day] = { focus: "Custom", exercises: data };
+          }
+        }
+        // If it was the old format, let's also force update Days 1-6 to the new Final routine as requested
+        if (isOldFormat) {
+          Object.assign(loaded.plan, JSON.parse(JSON.stringify(DEFAULT_PLAN)));
+        }
+      }
+
       state = Object.assign(state, loaded);
-      // Ensure plan exists
-      if (!state.plan || Object.keys(state.plan).length === 0) {
+      // Ensure plan exists and is valid
+      if (!state.plan || Object.keys(state.plan).length === 0 || Array.isArray(state.plan)) {
         state.plan = JSON.parse(JSON.stringify(DEFAULT_PLAN));
       }
     }
   } catch(e) {
-    console.log('No saved state yet', e);
+    console.log('Error loading state:', e);
+    // If state is completely corrupted, reset plan at least
+    state.plan = JSON.parse(JSON.stringify(DEFAULT_PLAN));
   }
+  
+  // Extra safety: ensure plan structure is fully valid
+  for (const [day, data] of Object.entries(state.plan)) {
+    if (!data || !Array.isArray(data.exercises)) {
+      state.plan[day] = { focus: "Custom", exercises: [] };
+    }
+  }
+
   initExerciseData();
   if (!state.defaultRestSeconds) state.defaultRestSeconds = 90;
   if (!state.exerciseMuscleMap) state.exerciseMuscleMap = {};
